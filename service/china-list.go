@@ -3,9 +3,9 @@ package service
 import (
 	"bufio"
 	"net/http"
-	"sync"
 
 	"go.kuoruan.net/adguard-upstream/models"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -37,38 +37,34 @@ type ChinaList struct {
 	Google             []string
 }
 
-func NewChinaListService() *ChinaList {
+func NewChinaList() *ChinaList {
 	return &ChinaList{
 		Client: http.Client{},
 	}
 }
 
 func (s *ChinaList) Update() error {
-	var wg sync.WaitGroup
+	var g errgroup.Group
 
 	for _, url := range []urlType{
 		{url: urls[0], listType: AcceleratedDomains},
 		{url: urls[1], listType: Apple},
 		{url: urls[2], listType: Google},
 	} {
-		wg.Add(1)
-
 		j := url
 
-		go func() {
-			defer wg.Done()
-
-			req, err := http.NewRequest("GET", "https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf", nil)
+		g.Go(func() error {
+			req, err := http.NewRequest("GET", j.url, nil)
 
 			if err != nil {
-				return
+				return err
 			}
 
-			req.Header.Set("User-Agent", "curl/7.64.1")
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
 
 			res, err := s.Client.Do(req)
 			if err != nil {
-				return
+				return err
 			}
 
 			defer res.Body.Close()
@@ -85,7 +81,7 @@ func (s *ChinaList) Update() error {
 			}
 
 			if err := sc.Err(); err != nil {
-				return
+				return err
 			}
 
 			list := make([]string, 0, len(m))
@@ -103,12 +99,12 @@ func (s *ChinaList) Update() error {
 			case Google:
 				s.Google = list
 			}
-		}()
+
+			return nil
+		})
 	}
 
-	wg.Wait()
-
-	return nil
+	return g.Wait()
 }
 
 func (s *ChinaList) Transform() {

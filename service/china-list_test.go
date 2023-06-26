@@ -9,7 +9,7 @@ import (
 )
 
 func TestChinaList_Update(t *testing.T) {
-	s := service.NewChinaListService()
+	s := service.NewChinaList()
 
 	err := s.Update()
 
@@ -18,7 +18,7 @@ func TestChinaList_Update(t *testing.T) {
 }
 
 func TestChinaList_Transform(t *testing.T) {
-	s := service.NewChinaListService()
+	s := service.NewChinaList()
 
 	s.Transform()
 
@@ -26,13 +26,13 @@ func TestChinaList_Transform(t *testing.T) {
 }
 
 func TestChinaList_Client(t *testing.T) {
-	s := service.NewChinaListService()
+	s := service.NewChinaList()
 
 	assert.IsType(t, http.Client{}, s.Client)
 }
 
 func TestChinaList_AcceleratedDomains(t *testing.T) {
-	s := service.NewChinaListService()
+	s := service.NewChinaList()
 
 	assert.Empty(t, s.AcceleratedDomains)
 
